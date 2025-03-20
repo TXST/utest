@@ -1,0 +1,18 @@
+# 基础忽略所有文件
+*
+
+# 反向规则（白名单）
+!*/          # 允许遍历目录结构
+!*.c
+!*.cpp
+!*.h
+!*.hpp
+!*.S
+!*.cu
+!*.cuh
+!*.py
+
+# 必须保留的文件
+!.gitignore
+!README.md
+!CMakeLists.txt
