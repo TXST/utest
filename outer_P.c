@@ -25,9 +25,9 @@ __dma_aligned T* buffer_out;
 
 
 //MRAM中静态分配
-#define INPUT_SIZE  (64)    //x
+#define INPUT_SIZE  (256)    //x
 #define WEIGHT_SIZE (128)   //B
-#define OUTPUT_SIZE ((8) * 1024)    //h
+#define OUTPUT_SIZE (INPUT_SIZE * WEIGHT_SIZE)    //h
 
 __mram_noinit T weight[WEIGHT_SIZE];
 __mram_noinit T input[INPUT_SIZE];
@@ -49,15 +49,18 @@ int main() {
         buffer_out = mem_alloc(OUTPUT_SIZE);
         // for(int i = 0;i < 8192;i ++) buffer_out[i] = 1;
 
-        mram_read(weight, buffer_weight, 128);
-        mram_read(input, buffer_in, 64);
+        mram_read(weight, buffer_weight, WEIGHT_SIZE);
+        mram_read(input, buffer_in, INPUT_SIZE);
     }
     barrier_wait(&my_barrier);
 
     // printf("thread-%d--stack--%d\n",me(),check_stack());
-    //每人8个点，B = 128 = 16 * 8
-    //x = 64 * 64(dpu)
-    outer_p(buffer_in,buffer_out + me() * 8,64,buffer_weight + me() * 8);
+    
+    
+    outer_p(buffer_in,  
+            buffer_out + me() * 8,    //每人8个点，B = 128 = 16 * 8
+            32,                       //INPUT_SIZE / 8  ，每次进8个x
+            buffer_weight + me() * 8);
     // if(me() == 0) printf("%d\t",buffer_out[6]);
 
         // mram_write(buffer_out + write_offset + cout_offset, outputAB + write_offset + cout_offset, (size));

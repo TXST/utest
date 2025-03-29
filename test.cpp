@@ -540,20 +540,20 @@ int main() {
 
     // 2. 定义分布范围：0 到 127（共 128 个整数）
     std::uniform_int_distribution<int> dist(0, 127);
-    T BB[64 * 64 * 4],xx[64 * 640],oo[128 * 64 * 640] = {0};
+    T BB[64 * 64 * 4],xx[256 * 128],oo[128 * 64 * 640] = {0};
     int cnt = 0;
-/*
+
     //------------------outer_P----------------------
     //CPU    
     for(int i = 0;i < 128;i ++ ) BB[i] = dist(gen);
-    for(int i = 0;i < 64 * 640;i ++ ) xx[i] = dist(gen);
+    for(int i = 0;i < 256 * 128;i ++ ) xx[i] = dist(gen);
 
     start = my_clock();
 
     #pragma omp parallel for num_threads(16)
     for(int i = 0; i < 128; i++) {
-        for(int j = 0; j < 64 * 640; j++) {
-            int index = i * (64 * 640) + j;  // 线程安全的索引计算
+        for(int j = 0; j < 256 * 128; j++) {
+            int index = i * (256 * 128) + j;  // 线程安全的索引计算
             oo[index] += BB[i] * xx[j];
         }
     }
@@ -566,31 +566,34 @@ int main() {
     printf(" %.d \n", oo[128 * 64 *64 - 1]);
 
     //DPU
-    DPU_ASSERT(dpu_alloc(640, NULL, &set[1])); //申请
-    DPU_ASSERT(dpu_load(set[1], DPU_BINARY, NULL));//装程序
-    DPU_FOREACH(set[1], dpu, idx) {
-        DPU_ASSERT(dpu_prepare_xfer(dpu, &xx[idx * 64]));
-    }
-    DPU_ASSERT(dpu_push_xfer(set[1], DPU_XFER_TO_DPU, "input", 0,
-                             (64 * sizeof(T)), DPU_XFER_DEFAULT));
-    DPU_FOREACH(set[1], dpu, idx) {
-        DPU_ASSERT(dpu_prepare_xfer(dpu, &BB[0]));
-    }
-    DPU_ASSERT(dpu_push_xfer(set[1], DPU_XFER_TO_DPU, "weight", 0,
-                             (128 * sizeof(T)), DPU_XFER_DEFAULT));
-    start = my_clock();
+    for (int zzz = 128; zzz < 2561; zzz+=128)
+    {
+        DPU_ASSERT(dpu_alloc(zzz, NULL, &set[1])); //申请
+        DPU_ASSERT(dpu_load(set[1], DPU_BINARY, NULL));//装程序
+        DPU_FOREACH(set[1], dpu, idx) {
+            DPU_ASSERT(dpu_prepare_xfer(dpu, &xx[0]));
+        }
+        DPU_ASSERT(dpu_push_xfer(set[1], DPU_XFER_TO_DPU, "input", 0,
+                                 (256 * sizeof(T)), DPU_XFER_DEFAULT));
+        DPU_FOREACH(set[1], dpu, idx) {
+            DPU_ASSERT(dpu_prepare_xfer(dpu, &BB[0]));
+        }
+        DPU_ASSERT(dpu_push_xfer(set[1], DPU_XFER_TO_DPU, "weight", 0,
+                                 (128 * sizeof(T)), DPU_XFER_DEFAULT));
+        start = my_clock();
+    
+        DPU_ASSERT(dpu_launch(set[1], DPU_SYNCHRONOUS));
+        end = my_clock();
+        printf(" %.2e \n", end - start);
 
-    DPU_ASSERT(dpu_launch(set[1], DPU_SYNCHRONOUS));
-    //TODO：最后把log去掉
-    // DPU_FOREACH(set[1], dpu) {
-    //     DPU_ASSERT(dpu_log_read(dpu, stdout));
-    // }
-    end = my_clock();
-    printf(" %.2e secs.\n", end - start);
+        DPU_ASSERT(dpu_free(set[1]));
+    }
+    
+
     printf("out_p done~\n");
-*/
-    //----------------inner_P--------------------
 
+    //----------------inner_P--------------------
+/*
     for(int i = 0;i < 64 * 64 * 4;i ++ ) BB[i] = dist(gen);
     for(int i = 0;i < 224 * 4 * 14;i ++ ) xx[i] = dist(gen);
 
@@ -621,7 +624,9 @@ int main() {
     printf(" %.2e secs.\n", end - start);
     printf("inner_P done~\n");
 
-    
+ */
+
+ 
     return 0;
 
 

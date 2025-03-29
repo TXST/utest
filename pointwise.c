@@ -28,7 +28,8 @@ void pointwise_conv2d(T input[IN_HEIGHT][IN_WIDTH][IN_CH],
         for (int w = 0; w < IN_WIDTH; w++) {
             for (int c_out = 0; c_out < OUT_CH; c_out++) {
                 // 初始化累加值为偏置项
-                T acc = biases[c_out];
+                // T acc = biases[c_out];
+                T acc = 0;
                 
                 // 1x1卷积核计算
                 for (int c_in = 0; c_in < IN_CH; c_in++) {
@@ -36,7 +37,8 @@ void pointwise_conv2d(T input[IN_HEIGHT][IN_WIDTH][IN_CH],
                 }
                 
                 // 使用ReLU激活函数
-                output[h][w][c_out] = acc > 0.0f ? acc : 0.0f;
+                // output[h][w][c_out] = acc > 0.0f ? acc : 0.0f;
+                output[h][w][c_out] = acc;
             }
         }
     }
